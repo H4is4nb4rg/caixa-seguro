@@ -25,6 +25,7 @@ def db():
     yield sessao
     sessao.close()
     Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 def _usuario(db, nome, login, perfil, ativo=True):
