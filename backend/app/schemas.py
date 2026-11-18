@@ -1,15 +1,26 @@
 """Esquemas Pydantic: validação obrigatória de todos os dados que entram e saem da API."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from typing import Annotated
 
 Perfil = Literal["proprietaria", "caixa", "vendedora"]
 TipoMovimentacao = Literal["venda", "desconto", "troca", "sangria", "pagamento"]
 FormaPagamento = Literal["dinheiro", "pix", "debito", "credito"]
 Dinheiro = Decimal
+
+
+def _garantir_utc(valor: datetime | None) -> datetime | None:
+    """Bancos como o SQLite devolvem datas sem fuso; todas são gravadas em UTC."""
+    if valor is not None and valor.tzinfo is None:
+        return valor.replace(tzinfo=timezone.utc)
+    return valor
+
+
+DataUTC = Annotated[datetime, AfterValidator(_garantir_utc)]
 
 
 class LoginEntrada(BaseModel):
@@ -48,9 +59,9 @@ class CaixaSaida(BaseModel):
     id: uuid.UUID
     status: str
     valor_inicial: Dinheiro
-    aberto_em: datetime
+    aberto_em: DataUTC
     usuario_abertura_id: uuid.UUID
-    fechado_em: datetime | None = None
+    fechado_em: DataUTC | None = None
     usuario_fechamento_id: uuid.UUID | None = None
     valor_esperado: Dinheiro | None = None
     valor_contado: Dinheiro | None = None
@@ -96,7 +107,7 @@ class MovimentacaoSaida(BaseModel):
     valor: Dinheiro
     forma_pagamento: FormaPagamento | None
     observacao: str | None
-    registrado_em: datetime
+    registrado_em: DataUTC
     cancelada: bool
     motivo_cancelamento: str | None
     cancelada_por_id: uuid.UUID | None

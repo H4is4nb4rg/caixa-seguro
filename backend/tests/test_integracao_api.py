@@ -170,3 +170,12 @@ def test_erro_inesperado_nao_expoe_detalhes(client, monkeypatch):
     resposta = client.get("/caixa/atual", headers=cab)
     assert resposta.status_code == 500
     assert resposta.json() == {"detail": "Não foi possível concluir a operação."}
+
+
+def test_datas_sao_retornadas_com_fuso_utc(client):
+    cab = entrar(client, "carla")
+    client.post("/caixa/abrir", json={"valor_inicial": "0"}, headers=cab)
+    client.post("/movimentacoes", json={"tipo": "sangria", "valor": "5.00"}, headers=cab)
+    item = client.get("/movimentacoes", headers=cab).json()[0]
+    assert item["registrado_em"].endswith(("Z", "+00:00"))
+    assert client.get("/caixa/atual", headers=cab).json()["caixa"]["aberto_em"].endswith(("Z", "+00:00"))
