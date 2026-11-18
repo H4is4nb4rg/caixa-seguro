@@ -17,7 +17,7 @@ Na loja, vendas, descontos, trocas, sangrias e pagamentos eram comunicados verba
 | RF03 | Registro de movimentação com responsável e horário definidos pelo servidor | ✅ |
 | RF04 | Fechamento com valor esperado, valor contado, diferença e justificativa obrigatória | ✅ |
 | RF05 | Cancelamento com motivo, sem exclusão do histórico | ✅ |
-| RF06 | Painel completo da proprietária | Próximo incremento |
+| RF06 | Painel da proprietária (vendas por forma de pagamento, por responsável e fechamentos com diferença) | ✅ |
 | RF07 | Registro offline com sincronização (a API já evita duplicidade pelo UUID) | Parcial |
 
 ## Arquitetura
