@@ -23,4 +23,14 @@ class Settings(BaseSettings):
         return self.ambiente == "producao"
 
 
+CHAVE_PADRAO_DESENVOLVIMENTO = "chave-de-desenvolvimento-troque-em-producao-0000"
+
+
+def validar_configuracao(config: Settings) -> None:
+    """Impede que a API rode em produção com a chave JWT de desenvolvimento."""
+    if config.producao and (config.jwt_secret == CHAVE_PADRAO_DESENVOLVIMENTO or len(config.jwt_secret) < 32):
+        raise RuntimeError("Defina JWT_SECRET com pelo menos 32 caracteres antes de iniciar em produção.")
+
+
 settings = Settings()
+validar_configuracao(settings)
