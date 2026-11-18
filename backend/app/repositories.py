@@ -33,6 +33,15 @@ class CaixaRepositorio:
     def ultimo(self) -> Caixa | None:
         return self.db.scalar(select(Caixa).order_by(Caixa.aberto_em.desc()).limit(1))
 
+    def fechados_com_diferenca(self, limite: int = 5) -> list[Caixa]:
+        consulta = (
+            select(Caixa)
+            .where(Caixa.status == "fechado", Caixa.divergencia != 0)
+            .order_by(Caixa.fechado_em.desc())
+            .limit(limite)
+        )
+        return list(self.db.scalars(consulta))
+
     def adicionar(self, caixa: Caixa) -> Caixa:
         self.db.add(caixa)
         self.db.flush()

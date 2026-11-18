@@ -23,6 +23,7 @@ ZERO = Decimal("0.00")
 PODE_ABRIR_FECHAR = {"proprietaria", "caixa"}
 PODE_REGISTRAR = {"proprietaria", "caixa", "vendedora"}
 PODE_CANCELAR = {"proprietaria", "caixa"}
+PODE_VER_PAINEL = {"proprietaria"}
 
 
 class ErroNegocio(Exception):
@@ -209,3 +210,56 @@ class MovimentacaoServico:
     def listar(self, limite: int = 50) -> list[Movimentacao]:
         caixa = self.caixa_servico.caixa_aberto_ou_erro()
         return self.movs.do_caixa(caixa.id, limite)
+
+
+class PainelServico:
+    """Resumo do caixa para a proprietária acompanhar a loja à distância (RF06)."""
+
+    def __init__(self, db: Session):
+        self.db = db
+        self.caixas = CaixaRepositorio(db)
+        self.movs = MovimentacaoRepositorio(db)
+
+    def montar(self, usuario: Usuario) -> dict:
+        CaixaServico._exigir_perfil(usuario, PODE_VER_PAINEL)
+        caixa = self.caixas.aberto() or self.caixas.ultimo()
+        por_forma: dict[str, list] = {}
+        por_resp: dict[str, list] = {}
+        total_vendas, qtd_vendas, canceladas, saldo = ZERO, 0, 0, None
+        if caixa is not None:
+            todas = self.movs.do_caixa(caixa.id, limite=1000)
+            for m in todas:
+                if m.cancelada:
+                    canceladas += 1
+                    continue
+                r = por_resp.setdefault(m.usuario.nome, [0, ZERO])
+                r[0] += 1
+                r[1] += m.valor
+                if m.tipo == "venda":
+                    qtd_vendas += 1
+                    total_vendas += m.valor
+                    f = por_forma.setdefault(m.forma_pagamento or "outros", [0, ZERO])
+                    f[0] += 1
+                    f[1] += m.valor
+            saldo = (
+                calcular_saldo_esperado(caixa.valor_inicial, [m for m in todas if not m.cancelada])
+                if caixa.status == "aberto"
+                else caixa.valor_esperado
+            )
+
+        def lista(d):
+            return [
+                {"chave": k, "quantidade": v[0], "total": v[1]}
+                for k, v in sorted(d.items(), key=lambda item: item[1][1], reverse=True)
+            ]
+
+        return {
+            "caixa_atual": caixa,
+            "total_vendas": total_vendas,
+            "quantidade_vendas": qtd_vendas,
+            "saldo_esperado_dinheiro": saldo,
+            "quantidade_canceladas": canceladas,
+            "por_forma_pagamento": lista(por_forma),
+            "por_responsavel": lista(por_resp),
+            "caixas_com_diferenca": self.caixas.fechados_com_diferenca(),
+        }

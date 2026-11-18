@@ -116,3 +116,29 @@ class MovimentacaoSaida(BaseModel):
 class RegistroSaida(BaseModel):
     movimentacao: MovimentacaoSaida
     saldo_esperado: Dinheiro
+
+
+class TotalPorChave(BaseModel):
+    chave: str
+    quantidade: int
+    total: Dinheiro
+
+
+class CaixaResumoPainel(BaseModel):
+    id: uuid.UUID
+    status: str
+    aberto_em: DataUTC
+    fechado_em: DataUTC | None = None
+    divergencia: Dinheiro | None = None
+    justificativa: str | None = None
+
+
+class PainelSaida(BaseModel):
+    caixa_atual: CaixaResumoPainel | None
+    total_vendas: Dinheiro
+    quantidade_vendas: int
+    saldo_esperado_dinheiro: Dinheiro | None
+    quantidade_canceladas: int
+    por_forma_pagamento: list[TotalPorChave]
+    por_responsavel: list[TotalPorChave]
+    caixas_com_diferenca: list[CaixaResumoPainel]

@@ -179,3 +179,37 @@ def test_datas_sao_retornadas_com_fuso_utc(client):
     item = client.get("/movimentacoes", headers=cab).json()[0]
     assert item["registrado_em"].endswith(("Z", "+00:00"))
     assert client.get("/caixa/atual", headers=cab).json()["caixa"]["aberto_em"].endswith(("Z", "+00:00"))
+
+
+# ---------- painel da proprietária (RF06) ----------
+
+def test_painel_resume_vendas_por_forma_e_responsavel(client):
+    cab_caixa = entrar(client, "carla")
+    client.post("/caixa/abrir", json={"valor_inicial": "100.00"}, headers=cab_caixa)
+    client.post("/movimentacoes", json={"tipo": "venda", "valor": "189.90", "forma_pagamento": "pix"}, headers=cab_caixa)
+    client.post("/movimentacoes", json={"tipo": "venda", "valor": "50.00", "forma_pagamento": "dinheiro"}, headers=cab_caixa)
+    cab_bia = entrar(client, "bia")
+    client.post("/movimentacoes", json={"tipo": "venda", "valor": "60.10", "forma_pagamento": "pix"}, headers=cab_bia)
+
+    painel = client.get("/caixa/painel", headers=entrar(client, "silvia")).json()
+    assert painel["total_vendas"] == "300.00"
+    assert painel["quantidade_vendas"] == 3
+    assert painel["saldo_esperado_dinheiro"] == "150.00"
+    formas = {f["chave"]: f["total"] for f in painel["por_forma_pagamento"]}
+    assert formas == {"pix": "250.00", "dinheiro": "50.00"}
+    responsaveis = {r["chave"]: r["quantidade"] for r in painel["por_responsavel"]}
+    assert responsaveis == {"Carla": 2, "Bia": 1}
+
+
+def test_painel_lista_caixas_fechados_com_diferenca(client):
+    cab = entrar(client, "carla")
+    client.post("/caixa/abrir", json={"valor_inicial": "100.00"}, headers=cab)
+    client.post("/caixa/fechar", json={"valor_contado": "90.00", "justificativa": "Troco errado"}, headers=cab)
+    painel = client.get("/caixa/painel", headers=entrar(client, "silvia")).json()
+    assert painel["caixas_com_diferenca"][0]["divergencia"] == "-10.00"
+    assert painel["caixas_com_diferenca"][0]["justificativa"] == "Troco errado"
+
+
+def test_painel_e_exclusivo_da_proprietaria(client):
+    assert client.get("/caixa/painel", headers=entrar(client, "carla")).status_code == 403
+    assert client.get("/caixa/painel", headers=entrar(client, "bia")).status_code == 403
