@@ -16,6 +16,12 @@ export interface Movimentacao {
   id: string; tipo: string; valor: string; forma_pagamento: string | null; observacao: string | null;
   registrado_em: string; responsavel: string; cancelada: boolean; motivo_cancelamento: string | null;
 }
+export interface TotalPorChave { chave: string; quantidade: number; total: string; }
+export interface CaixaPainel { id: string; status: string; aberto_em: string; fechado_em: string | null; divergencia: string | null; justificativa: string | null; }
+export interface Painel {
+  caixa_atual: CaixaPainel | null; total_vendas: string; quantidade_vendas: number; saldo_esperado_dinheiro: string | null;
+  quantidade_canceladas: number; por_forma_pagamento: TotalPorChave[]; por_responsavel: TotalPorChave[]; caixas_com_diferenca: CaixaPainel[];
+}
 export interface Registro { movimentacao: Movimentacao; saldo_esperado: string; }
 
 const CHAVE_SESSAO = 'caixa_seguro_sessao';
@@ -65,6 +71,7 @@ export class ApiService {
   fechar(valor_contado: string, justificativa: string | null) {
     return this.http.post<Caixa>(`${this.base}/caixa/fechar`, { valor_contado, justificativa }, this.opcoes);
   }
+  painel() { return this.http.get<Painel>(`${this.base}/caixa/painel`, this.opcoes); }
   movimentacoes() { return this.http.get<Movimentacao[]>(`${this.base}/movimentacoes?limite=10`, this.opcoes); }
   registrar(dados: { id: string; tipo: string; valor: string; forma_pagamento: string | null; observacao: string | null }) {
     return this.http.post<Registro>(`${this.base}/movimentacoes`, dados, this.opcoes);

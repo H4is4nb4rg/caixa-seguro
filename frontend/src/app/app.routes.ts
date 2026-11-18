@@ -4,6 +4,7 @@ import { ApiService } from './servicos/api.service';
 import { LoginPagina } from './paginas/login';
 import { InicioPagina } from './paginas/inicio';
 import { MovimentacaoPagina } from './paginas/movimentacao';
+import { PainelPagina } from './paginas/painel';
 import { ConfirmacaoPagina, FechamentoPagina } from './paginas/resultado';
 
 const autenticado = () => (inject(ApiService).usuario() ? true : inject(Router).parseUrl('/login'));
@@ -14,6 +15,7 @@ export const routes: Routes = [
   { path: 'movimentacao', component: MovimentacaoPagina, canActivate: [autenticado], title: 'Nova movimentação · Caixa Seguro' },
   { path: 'confirmacao', component: ConfirmacaoPagina, canActivate: [autenticado], title: 'Registrado · Caixa Seguro' },
   { path: 'fechamento', component: FechamentoPagina, canActivate: [autenticado], title: 'Fechamento · Caixa Seguro' },
+  { path: 'painel', component: PainelPagina, canActivate: [autenticado], title: 'Painel · Caixa Seguro' },
   { path: '', pathMatch: 'full', redirectTo: 'inicio' },
   { path: '**', redirectTo: 'inicio' },
 ];

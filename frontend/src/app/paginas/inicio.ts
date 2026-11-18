@@ -41,6 +41,9 @@ import { ApiService, NOMES_PERFIL, Resumo, mensagemDeErro, normalizarValor, reai
             <p class="muted">Peça a abertura do caixa para a responsável.</p>
           }
         }
+        @if (ehProprietaria()) {
+          <button class="btn secundario" (click)="router.navigateByUrl('/painel')">📊 Painel da loja</button>
+        }
       } @else {
         <p class="muted" role="status">{{ erro() || 'Carregando...' }}</p>
       }
@@ -56,6 +59,7 @@ export class InicioPagina implements OnInit {
   valorInicial = '';
   perfil = computed(() => { const u = this.api.usuario(); return u ? NOMES_PERFIL[u.perfil] : ''; });
   podeAbrirFechar = computed(() => ['proprietaria', 'caixa'].includes(this.api.usuario()?.perfil ?? ''));
+  ehProprietaria = computed(() => this.api.usuario()?.perfil === 'proprietaria');
   aberto = computed(() => this.resumo()?.caixa?.status === 'aberto');
 
   ngOnInit() { this.carregar(); }
